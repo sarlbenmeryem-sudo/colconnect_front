@@ -1,0 +1,7 @@
+
+# backups / local patch artifacts
+*.bak.*
+*.bak
+index.html.bak.*
+.github/workflows/*.bak.*
+CC_PATCH_*.sh
