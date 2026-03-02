@@ -1,0 +1,405 @@
+:root{
+  --bg: #0b1320;
+  --card: rgba(255,255,255,0.06);
+  --card2: rgba(255,255,255,0.08);
+  --txt: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.62);
+  --line: rgba(255,255,255,0.12);
+  --accent: #c9a227;
+  --accent2: #2d6a4f;
+  --danger: #b91c1c;
+  --shadow: 0 16px 50px rgba(0,0,0,0.35);
+  --radius: 18px;
+  --radius2: 14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+}
+
+/* ================================================
+   BANDEAU ARBITRAGE EXÉCUTIF (version compacte)
+   Intégration dans ColConnect après ISM/IRM
+   ================================================ */
+
+.arbitrage-executive {
+  background: linear-gradient(180deg, rgba(10,22,36,.92) 0%, rgba(12,28,48,.86) 100%);
+  border: 1px solid rgba(201,162,39,.22);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.arbitrage-executive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #c9a227 0%, #d4b545 50%, #c9a227 100%);
+}
+
+.arb-exec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(201,162,39,.12);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.arb-exec-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.arb-exec-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+  animation: arbPulse 2s ease-in-out infinite;
+}
+
+@keyframes arbPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 12px rgba(251, 191, 36, 0.8); }
+}
+
+.arb-exec-indicator.status-ok { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+.arb-exec-indicator.status-warning { background: #fbbf24; box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); }
+.arb-exec-indicator.status-error { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+.arb-exec-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.95);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.arb-exec-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.arb-exec-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.arb-exec-badge-impact {
+  background: rgba(100, 116, 139, 0.25);
+  color: rgba(255,255,255,.7);
+  border: 1px solid rgba(100, 116, 139, 0.4);
+}
+
+.arb-exec-badge-urgence {
+  background: rgba(127, 29, 29, 0.35);
+  color: #fca5a5;
+  border: 1px solid rgba(153, 27, 27, 0.5);
+}
+
+.arb-exec-badge-horizon {
+  background: rgba(30, 58, 95, 0.25);
+  color: rgba(255,255,255,.8);
+  border: 1px solid rgba(30, 58, 95, 0.4);
+}
+
+/* Grille des 3 colonnes */
+.arb-exec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .arb-exec-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+}
+
+/* Carte individuelle */
+.arb-exec-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(201,162,39,.12);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+}
+
+.arb-exec-card:hover {
+  border-color: rgba(201,162,39,.28);
+  background: rgba(255,255,255,.045);
+}
+
+.arb-exec-card-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(201,162,39,.10);
+}
+
+.arb-exec-card-content {
+  flex: 1;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,.75);
+  line-height: 1.45;
+}
+
+.arb-exec-card-content p {
+  margin: 0;
+}
+
+/* Liste d'actions recommandées */
+.arb-exec-actions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.arb-exec-actions-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,.75);
+}
+
+.arb-exec-actions-list li::before {
+  content: '→';
+  color: #c9a227;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* États spéciaux du bandeau */
+.arbitrage-executive[data-status="ok"] {
+  border-color: rgba(34, 197, 94, 0.22);
+}
+
+.arbitrage-executive[data-status="warning"] {
+  border-color: rgba(251, 191, 36, 0.22);
+}
+
+.arbitrage-executive[data-status="error"] {
+  border-color: rgba(239, 68, 68, 0.22);
+}
+
+/* Animation d'entrée */
+.arbitrage-executive {
+  animation: arbFadeIn 0.5s ease-out;
+}
+
+@keyframes arbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive pour petits écrans */
+@media (max-width: 600px) {
+  .arb-exec-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  
+  .arb-exec-title {
+    font-size: 0.88rem;
+  }
+  
+  .arb-exec-card {
+    padding: 0.75rem 0.85rem;
+    min-height: auto;
+  }
+}
+
+
+
+/* garde les badges à droite si présents */
+.arb-exec-badges{
+  margin-left:auto;
+}
+/* micro-décalage à droite du titre */
+#arbOpenModule.arb-exec-open-btn{
+  margin-left: 28px;
+  white-space:nowrap;
+}
+
+
+/* ===== CC_ARB_TITLE_SHIFT_V1 : décale le titre à droite ===== */
+.arb-exec-title-group{
+  transform: translateX(95px);
+}
+
+
+/* si tu as trop décalé le titre : réduit légèrement */
+.arb-exec-title-group{
+  transform: translateX(85px);
+}
+
+/* ===== CC_ARB_OVERLAP_FIX_V3 : éviter chevauchement bouton/titre ===== */
+.arb-exec-header{
+  position: relative;
+  padding-left: 120px; /* réserve de la place pour le bouton à gauche */
+}
+
+#arbOpenModule.arb-exec-open-btn{
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  z-index: 3;
+}
+
+/* si tu as trop décalé le titre : réduit légèrement */
+.arb-exec-title-group{
+  transform: translateX(85px);
+}
+
+/* ===== CC_ARB_HOVER_PREMIUM_V2 : hover élégant (ColConnect) ===== */
+#arbOpenModule{
+  position: absolute; /* garde ton layout actuel */
+  transform: translateY(-50%);
+  transition:
+    transform 220ms cubic-bezier(.2,.8,.2,1),
+    box-shadow 220ms cubic-bezier(.2,.8,.2,1),
+    filter 220ms cubic-bezier(.2,.8,.2,1),
+    background-color 220ms cubic-bezier(.2,.8,.2,1),
+    border-color 220ms cubic-bezier(.2,.8,.2,1);
+  will-change: transform, box-shadow, filter;
+}
+
+/* micro glow discret + élévation très légère */
+#arbOpenModule:hover{
+  transform: translateY(-50%) translateY(-1.5px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.34);
+  filter: brightness(1.05);
+}
+
+/* animation premium du pictogramme ↗ (subtile) */
+#arbOpenModule:hover::before{
+  transform: translateX(2px);
+  opacity: .95;
+}
+
+#arbOpenModule::before{
+  content: "↗";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 220ms cubic-bezier(.2,.8,.2,1), opacity 220ms cubic-bezier(.2,.8,.2,1);
+  opacity: .85;
+}
+
+/* état actif (clic) */
+#arbOpenModule:active{
+  transform: translateY(-50%) translateY(0px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.22);
+  filter: brightness(1.0);
+}
+
+/* accessibilité clavier */
+#arbOpenModule:focus-visible{
+  outline: none;
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.34),
+    0 0 0 3px rgba(227,179,65,0.28);
+}
+
+/* ===== CC_ARB_BADGE_DYNAMIC_V1 : couleurs dynamiques Impact/Urgence/Horizon ===== */
+.arb-exec-badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.90);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 12px;
+  transition: transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms cubic-bezier(.2,.8,.2,1), filter 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+/* petit dot */
+.arb-exec-badge::before{
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.35);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.12);
+}
+
+/* état N/A (aucun projet arbitré) */
+.arb-exec-badge[data-level="na"]{
+  opacity: .78;
+}
+
+/* palettes ColConnect (sobres) */
+.arb-exec-badge[data-level="low"]{
+  border-color: rgba(160,170,190,.35);
+}
+.arb-exec-badge[data-level="low"]::before{
+  background: rgba(160,170,190,.95);
+}
+
+.arb-exec-badge[data-level="mid"]{
+  border-color: rgba(80,150,255,.45);
+}
+.arb-exec-badge[data-level="mid"]::before{
+  background: rgba(80,150,255,.98);
+}
+
+.arb-exec-badge[data-level="high"]{
+  border-color: rgba(227,179,65,.55);
+}
+.arb-exec-badge[data-level="high"]::before{
+  background: rgba(227,179,65,.98);
+}
+
+.arb-exec-badge[data-level="crit"]{
+  border-color: rgba(255,80,80,.55);
+}
+.arb-exec-badge[data-level="crit"]::before{
+  background: rgba(255,80,80,.98);
+}
+
+/* micro-hover premium (très discret) */
+.arb-exec-badge:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0,0,0,.22);
+  filter: brightness(1.04);
+}
+
