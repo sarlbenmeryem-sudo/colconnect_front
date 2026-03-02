@@ -1,0 +1,42 @@
+name: Analyze the frontend (static)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  static-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Basic sanity
+        run: |
+          set -euo pipefail
+          echo "Root files:"
+          ls -la
+          test -f index.html
+          test -d assets
+          echo "✅ index.html + assets/ present"
+
+      - name: List key assets
+        run: |
+          set -euo pipefail
+          echo "HTML:"
+          find . -maxdepth 3 -type f -name "*.html" | sed 's|^\./||' | head -n 200
+          echo "CSS:"
+          find . -maxdepth 4 -type f -name "*.css" | sed 's|^\./||' | head -n 200
+          echo "JS:"
+          find . -maxdepth 4 -type f -name "*.js" | sed 's|^\./||' | head -n 200
+
+      - name: Lightweight checks (non-fatal)
+        run: |
+          set -euo pipefail
+          echo "Scan for obvious accidental secrets patterns (light):"
+          (grep -RniE "(mongodb\+srv://|BEGIN PRIVATE KEY|AKIA[0-9A-Z]{16}|JWT_SECRET\s*=)" . \
+            --exclude-dir=.git --exclude="*.png" --exclude="*.jpg" --exclude="*.webp" || true)
+          echo "✅ Done"
