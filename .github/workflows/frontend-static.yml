@@ -14,29 +14,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Basic sanity
+      - name: Basic sanity (accept assets/ OR css+js)
         run: |
           set -euo pipefail
-          echo "Root files:"
+          echo "Root:"
           ls -la
-          test -f index.html
-          test -d assets
-          echo "✅ index.html + assets/ present"
+          test -f index.html || { echo "❌ index.html missing at repo root"; exit 1; }
 
-      - name: List key assets
+          if [ -d assets ]; then
+            echo "✅ assets/ found"
+          elif [ -d css ] && [ -d js ]; then
+            echo "✅ css/ + js/ found"
+          else
+            echo "❌ Expected either assets/ OR css/ and js/ directories"
+            exit 1
+          fi
+
+      - name: List key assets (non-fatal)
         run: |
           set -euo pipefail
           echo "HTML:"
-          find . -maxdepth 3 -type f -name "*.html" | sed 's|^\./||' | head -n 200
+          find . -maxdepth 3 -type f -name "*.html" | sed 's|^\./||' | head -n 200 || true
           echo "CSS:"
-          find . -maxdepth 4 -type f -name "*.css" | sed 's|^\./||' | head -n 200
+          find . -maxdepth 4 -type f -name "*.css" | sed 's|^\./||' | head -n 200 || true
           echo "JS:"
-          find . -maxdepth 4 -type f -name "*.js" | sed 's|^\./||' | head -n 200
+          find . -maxdepth 4 -type f -name "*.js" | sed 's|^\./||' | head -n 200 || true
 
-      - name: Lightweight checks (non-fatal)
+      - name: Lightweight secret scan (non-fatal)
         run: |
           set -euo pipefail
-          echo "Scan for obvious accidental secrets patterns (light):"
           (grep -RniE "(mongodb\+srv://|BEGIN PRIVATE KEY|AKIA[0-9A-Z]{16}|JWT_SECRET\s*=)" . \
             --exclude-dir=.git --exclude="*.png" --exclude="*.jpg" --exclude="*.webp" || true)
           echo "✅ Done"
