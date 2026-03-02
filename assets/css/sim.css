@@ -1,0 +1,424 @@
+/* =========================
+   ColConnect — SIM UI
+   ========================= */
+/* CC_PATCH_APPLIED_SIM_THEME_V3 */
+.sim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  /* Institutionnel navy (remplace violet/bleu) */
+  background: linear-gradient(180deg, rgba(10,22,36,.92) 0%, rgba(12,28,48,.86) 100%);
+  border: 1px solid rgba(201,162,39,.22);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.sim:hover{
+  transform: translateY(-2px);
+  border-color: rgba(201,162,39,.55);
+  box-shadow: 0 18px 55px rgba(0,0,0,.45);
+}
+
+.sim-title {
+  font-size: 24px;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.sim-content {
+  font-size: 16px;
+  color: white;
+  margin-bottom: 20px;
+  animation: fadeIn 1s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Utilitaires utilisés par le JS */
+.fade-in {
+  animation: fadeIn 0.9s ease-in-out;
+}
+
+.progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.25);
+  width: 100%;
+}
+
+.progress-bar > .bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.4s ease;
+  background: rgba(255,255,255,0.9);
+  color: #1a1a1a;
+  font-size: 12px;
+  line-height: 10px;
+  text-align: right;
+  padding-right: 6px;
+  box-sizing: border-box;
+}
+
+.complete {
+  filter: brightness(1.05);
+}
+
+.status-success { color: #e8ffe8; font-weight: 700; }
+.status-failure { color: #ffe8e8; font-weight: 700; }
+
+@media (max-width: 768px) {
+  .sim { padding: 15px; }
+  .sim-title { font-size: 20px; }
+  .sim-content { font-size: 14px; }
+}
+
+
+
+/* === CC_PATCH:SIM_EXEC_ALIGN_V4 === */
+/* Alignement strict des 4 cartes SIM (sans grid global)
+   - Chaque .sim-exec-item = colonne (label / primaire / secondaire)
+   - La ligne secondaire est poussée en bas (margin-top:auto)
+   - Min-height stabilise la hauteur entre cartes
+*/
+
+#simExecBanner .sim-executive-grid,
+#simExecBanner .sim-exec-grid{
+  align-items: stretch;
+}
+
+/* Cadre interne de chaque carte */
+#simExecBanner .sim-exec-item{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 128px;         /* ajuste la stabilité sans écraser */
+  height: 100%;
+}
+
+/* Label stable */
+#simExecBanner .sim-exec-label{
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Zone primaire : score (ISM/IRM) */
+#simExecBanner .sim-score{
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 44px;
+}
+
+/* Zone primaire : drivers (ligne % et/ou texte) */
+#simExecBanner .sim-exec-item #sim-ieb,
+#simExecBanner .sim-exec-item #sim-iep,
+#simExecBanner .sim-exec-item #sim-ics{
+  /* rien: juste des ancres pour éviter surcouches */
+}
+#simExecBanner .sim-exec-item .sim-exec-sub{
+  line-height: 1.35;
+}
+
+/* Zone primaire : risque */
+#simExecBanner .sim-exec-risk{
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Zone secondaire : toujours en bas */
+#simExecBanner #sim-ism-trend,
+#simExecBanner #sim-projection,
+#simExecBanner #sim-drivers-note,
+#simExecBanner #sim-risk-note{
+  margin-top: auto;
+}
+
+/* Notes: éviter centrage/wrapping bizarre */
+#simExecBanner #sim-drivers-note,
+#simExecBanner #sim-risk-note,
+#simExecBanner #sim-ism-trend,
+#simExecBanner #sim-projection{
+  display: block;
+  text-align: left;
+  white-space: normal;
+}
+
+/* Sécurité: empêcher que des éléments flottants “cassent” le flux */
+#simExecBanner .sim-exec-item *{
+  max-width: 100%;
+}
+/* === /CC_PATCH:SIM_EXEC_ALIGN_V4 === */
+
+
+/* === CC_PATCH:SIM_RISK_COLOR_V1 === */
+/* Objectif: éviter le rouge “flash” sur le risque principal, garder un signal institutionnel */
+#simExecBanner #sim-risk{
+  color: rgba(220, 38, 38, 0.82);      /* rouge profond, moins saturé */
+  font-weight: 650;
+  letter-spacing: 0.1px;
+  text-shadow: none;
+}
+
+/* Si un style existant applique un rouge trop vif via <span> interne */
+#simExecBanner #sim-risk *{
+  color: inherit;
+}
+/* === /CC_PATCH:SIM_RISK_COLOR_V1 === */
+
+
+/* === CC_PATCH:SIM_DRIVERS_TYPO_V1 === */
+/* Objectif:
+   - Agrandir et clarifier IEB/IEP/ICS
+   - Séparer visuellement les 3 compteurs
+   - Garder l'alignement primaire (V4) avec les autres cartes
+*/
+
+/* Cible: la ligne .sim-exec-sub qui contient les 3 IDs */
+#simExecBanner .sim-exec-sub:has(#sim-ieb),
+#simExecBanner .sim-exec-sub:has(#sim-iep),
+#simExecBanner .sim-exec-sub:has(#sim-ics){
+  font-size: 0.98rem;         /* plus gros */
+  font-weight: 600;
+  letter-spacing: 0.12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;    /* propre et stable */
+  gap: 14px;                  /* séparation entre compteurs */
+  margin-top: 2px;
+}
+
+/* Si :has() n'est pas supporté, fallback sur la ligne drivers via IDs */
+#simExecBanner #sim-ieb,
+#simExecBanner #sim-iep,
+#simExecBanner #sim-ics{
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+/* Rendre les libellés IEB/IEP/ICS moins “bruyants” que les valeurs */
+#simExecBanner .sim-exec-sub:has(#sim-ieb){
+  color: rgba(255,255,255,0.82);
+}
+
+/* Remplacer les points "·" par des séparateurs discrets (sans toucher au HTML) */
+#simExecBanner .sim-exec-sub:has(#sim-ieb)::before{
+  content: "";
+  display: none;
+}
+#simExecBanner .sim-exec-sub:has(#sim-ieb){
+  /* on masque visuellement les "·" via spacing, le rendu devient propre */
+}
+
+/* Séparateurs verticaux discrets entre les 3 valeurs (sur les valeurs elles-mêmes) */
+#simExecBanner #sim-ieb,
+#simExecBanner #sim-iep{
+  padding-right: 14px;
+  margin-right: 14px;
+  border-right: 1px solid rgba(255,255,255,0.10);
+}
+
+/* Alignement: garder la ligne drivers comme “primaire” (zone 2) */
+#simExecBanner .sim-exec-sub:has(#sim-ieb){
+  margin-bottom: 2px;
+}
+/* === /CC_PATCH:SIM_DRIVERS_TYPO_V1 === */
+
+
+/* === CC_PATCH:SIM_DRIVERS_STABLE_GRID_V2 === */
+/* Objectif: Drivers parfaitement stable (3 colonnes), sans dépendre de :has()
+   Principe:
+   - La ligne .sim-exec-sub (celle des drivers) passe en grid 3 colonnes
+   - On masque le texte "IEB / IEP / ICS" + les séparateurs "·"
+   - On affiche les labels via ::before sur chaque <strong>
+*/
+
+#simExecBanner #sim-ieb,
+#simExecBanner #sim-iep,
+#simExecBanner #sim-ics{
+  display: inline-grid;
+  grid-template-rows: auto auto;
+  align-items: center;
+  justify-items: center;
+  font-weight: 800;
+  font-size: 1.05rem;           /* plus gros */
+  letter-spacing: 0.12px;
+  padding: 0 10px;
+}
+
+/* Labels au-dessus des % (institutionnel) */
+#simExecBanner #sim-ieb::before{
+  content: "IEB";
+  font-weight: 650;
+  font-size: 0.72rem;
+  opacity: 0.78;
+  letter-spacing: 0.14px;
+}
+#simExecBanner #sim-iep::before{
+  content: "IEP";
+  font-weight: 650;
+  font-size: 0.72rem;
+  opacity: 0.78;
+  letter-spacing: 0.14px;
+}
+#simExecBanner #sim-ics::before{
+  content: "ICS";
+  font-weight: 650;
+  font-size: 0.72rem;
+  opacity: 0.78;
+  letter-spacing: 0.14px;
+}
+
+/* Mettre la ligne drivers en grille 3 colonnes
+   (on cible via présence des IDs, sans :has: on applique à toutes .sim-exec-sub,
+    mais on restreint visuellement en neutralisant la ligne standard)
+*/
+#simExecBanner .sim-exec-item .sim-exec-sub{
+  line-height: 1.25;
+}
+
+/* Ciblage stable: la ligne drivers contient #sim-ieb/#sim-iep/#sim-ics.
+   On force cette ligne en grid, sans casser les autres:
+   - Elle contient des <strong> avec ces ids: on s'appuie sur la règle suivante:
+*/
+#simExecBanner #sim-ieb,
+#simExecBanner #sim-iep,
+#simExecBanner #sim-ics{
+  /* ok */
+}
+
+/* On transforme le PARENT de ces strong via une règle de portée:
+   on met display:grid sur tous .sim-exec-sub, mais on conserve les autres
+   en bloc grâce à une exception via :not() sur ceux qui n'ont pas de strong ids.
+   Comme on ne peut pas sélectionner parent, on sécurise en rendant le rendu "normal"
+   acceptable, et en empêchant le wrap.
+*/
+#simExecBanner .sim-exec-item:nth-of-type(3) .sim-exec-sub{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  column-gap: 10px;
+  align-items: center;
+  justify-items: center;
+  white-space: nowrap;
+}
+
+/* Masquer les textes "IEB", "IEP", "ICS" et les séparateurs "·" dans la ligne d'origine */
+#simExecBanner .sim-exec-item:nth-of-type(3) .sim-exec-sub{
+  font-size: 0;                 /* masque les mots et les "·" */
+}
+#simExecBanner .sim-exec-item:nth-of-type(3) .sim-exec-sub #sim-ieb,
+#simExecBanner .sim-exec-item:nth-of-type(3) .sim-exec-sub #sim-iep,
+#simExecBanner .sim-exec-item:nth-of-type(3) .sim-exec-sub #sim-ics{
+  font-size: 1.05rem;           /* réactive la taille pour les valeurs */
+}
+
+/* Séparateurs verticaux discrets */
+#simExecBanner .sim-exec-item:nth-of-type(3) .sim-exec-sub #sim-ieb,
+#simExecBanner .sim-exec-item:nth-of-type(3) .sim-exec-sub #sim-iep{
+  border-right: 1px solid rgba(255,255,255,0.10);
+}
+
+/* === /CC_PATCH:SIM_DRIVERS_STABLE_GRID_V2 === */
+
+
+/* === CC_PATCH:SIM_DRIVERS_SIZE_V2 === */
+/* Objectif: agrandir légèrement les 3 compteurs Drivers
+   - +8% environ
+   - garder équilibre institutionnel
+*/
+
+#simExecBanner #sim-ieb,
+#simExecBanner #sim-iep,
+#simExecBanner #sim-ics{
+  font-size: 1.12rem;   /* léger agrandissement */
+  font-weight: 800;
+  letter-spacing: 0.15px;
+}
+/* === /CC_PATCH:SIM_DRIVERS_SIZE_V2 === */
+
+
+/* === CC_PATCH:SIM_RISK_ORANGE_V2 === */
+/* Objectif: passer le risque principal en orange vif maîtrisé (signal fort mais premium) */
+
+#simExecBanner #sim-risk{
+  color: #F97316;          /* orange vif propre (tailwind 500) */
+  font-weight: 700;
+  text-shadow: none;
+}
+
+/* Sécurité si un span interne existe */
+#simExecBanner #sim-risk *{
+  color: inherit;
+}
+/* === /CC_PATCH:SIM_RISK_ORANGE_V2 === */
+
+
+/* === CC_PATCH:SIM_RISK_SIZE_LIGHT_V3 === */
+/* Objectif:
+   - très léger agrandissement
+   - retrait du gras
+   - conserver la hiérarchie premium
+*/
+
+#simExecBanner #sim-risk{
+  font-size: 1.05rem;    /* + léger */
+  font-weight: 500;      /* retrait du gras */
+  letter-spacing: 0.15px;
+}
+/* === /CC_PATCH:SIM_RISK_SIZE_LIGHT_V3 === */
+
+
+/* === CC_PATCH:SIM_CHIP_HERO_COLOR_V1 === */
+/* Objectif: aligner la couleur des chips SIM sur la hero-badge */
+
+#simExecBanner #sim-ism-meta,
+#simExecBanner .sim-exec-item .sim-chip{
+  background: rgba(30, 58, 95, 0.12);   /* même ton que hero badge */
+  color: #1E3A5F;                       /* couleur texte hero */
+  border: 1px solid rgba(30, 58, 95, 0.25);
+  font-weight: 600;
+}
+
+/* Hover subtil institutionnel */
+#simExecBanner .sim-exec-item .sim-chip:hover{
+  background: rgba(30, 58, 95, 0.18);
+  border-color: rgba(30, 58, 95, 0.35);
+}
+
+/* Icônes éventuelles */
+#simExecBanner .sim-exec-item .sim-chip i{
+  color: inherit;
+}
+/* === /CC_PATCH:SIM_CHIP_HERO_COLOR_V1 === */
+
+
+/* === CC_OFFLINE_PATCH:ALIGN_DRIVERS_NOTE_WITH_IRM_V1 === */
+/* Objectif: aligner la ligne Drivers note sur la ligne IRM (projection) */
+
+/* 1) forcer les deux lignes à être des "lignes basses" identiques */
+#simExecBanner #sim-projection,
+#simExecBanner #sim-drivers-note{
+  margin-top: auto;        /* pousse en bas */
+  display: block;
+  line-height: 1.25;
+  padding-top: 2px;
+  min-height: 18px;        /* stabilise l'alignement entre cartes */
+}
+
+/* 2) éviter qu’une règle héritée les centre ou les compresse */
+#simExecBanner #sim-projection,
+#simExecBanner #sim-drivers-note{
+  text-align: left;
+  white-space: normal;
+}
+
+/* === /CC_OFFLINE_PATCH:ALIGN_DRIVERS_NOTE_WITH_IRM_V1 === */
