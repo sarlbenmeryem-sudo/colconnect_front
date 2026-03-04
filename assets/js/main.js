@@ -1,17 +1,3 @@
-// == ColConnect API URL helper (injected) ==
-function __cc_url(path){
-  var apiBase = (window.__CC_API_BASE__ || "").replace(/\/\
-, "");
-  if(!apiBase){
-    // fallback: keep relative (useful for local dev)
-    return path;
-  }
-  if(!path) return apiBase;
-  if(/^https?:\/\//i.test(path)) return path;
-  if(path[0] !== "/") path = "/" + path;
-  return apiBase + path;
-}
-
 /* CC_PATCH:STAT_COLLECTIVITES_TO_20_V1 */
         // ColConnect - main.js | v1.0 | Extrait de v8.html script 1 | Dépendances: aucune
         // ========================
