@@ -1,3 +1,16 @@
+// == ColConnect API URL helper (injected) ==
+function __cc_url(path){
+  var apiBase = (window.__CC_API_BASE__ || "").replace(/\/, "");
+  if(!apiBase){
+    // fallback: keep relative (useful for local dev)
+    return path;
+  }
+  if(!path) return apiBase;
+  if(/^https?:\/\//i.test(path)) return path;
+  if(path[0] !== "/") path = "/" + path;
+  return apiBase + path;
+}
+
 /* ColConnect - patches.js | v1.0 | CC_PATCH_FIX_SCROLL_FREEZE_V2 | Dépendances: aucune */
 /* CC_PATCH_FIX_SCROLL_FREEZE_V2 (enrichi V1) */
 (function(){
