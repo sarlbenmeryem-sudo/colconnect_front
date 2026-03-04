@@ -1,0 +1,8 @@
+== [CC_PATCH_FRONT_FIX_API_CALLS_ONLY_V1_20260304] Start ==
+✅ patched: /mnt/c/Users/benme/Desktop/PLATEFORME TEST BIS ONE/colconnect_complet/colconnect_front/assets/js/main.js
+✅ patched: /mnt/c/Users/benme/Desktop/PLATEFORME TEST BIS ONE/colconnect_complet/colconnect_front/assets/js/patches.js
+
+== Quick check: remaining relative '/api/' fetches (should be none) ==
+OK: none found
+
+== [CC_PATCH_FRONT_FIX_API_CALLS_ONLY_V1_20260304] Done ==

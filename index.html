@@ -4608,11 +4608,6 @@ cout_estime = batiment.surface * 18</pre>
     </div>
 
     <!-- Scripts (ordre explicite : main -> financeur -> modals -> patches) -->
-    <script src="assets/js/main.js"></script>
-    <script src="assets/js/financeur.js"></script>
-    <script src="assets/js/modals.js"></script>
-    <script src="assets/js/patches.js"></script>
-    <script src="assets/js/ameliorations-52.js"></script>
 
 </div>
   <script type="module" src="assets/js/sim-animations.js"></script>
@@ -4807,6 +4802,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     <script src="assets/js/arbitrage.js?v=1771871945"></script>
     <script src="assets/js/arbitrage-module.js?v=1771871945"></script>
+<script src="assets/js/config.js"></script>      <!-- Définit __CC_API_BASE__ -->
+<script src="assets/js/main.js"></script>        <!-- Définit __cc_url() -->
+<script src="assets/js/patches.js"></script>     <!-- Utilise __cc_url() -->
+<script src="assets/js/financeur.js"></script>
+<script src="assets/js/modals.js"></script>
+<script src="assets/js/ameliorations-52.js"></script>
+
 </body>
 </html><script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -349,7 +349,7 @@
         const originalFetch = window.fetch;
         window.fetch = async function(url, options) {
             options = options || {};
-            var apiBase = (window.__CC_API_BASE__ || '').replace(/\/$/, '');
+            var apiBase = (window.__CC_API_BASE__ || '').replace(/\/$/$/, '');
             var prefix = window.__CC_API_PREFIX__ || '/api/v1';
 
             // Mode API réelle : forward vers l'API avec Bearer token
@@ -357,8 +357,8 @@
                 var match = url.match(/\/api\/(.+)/);
                 if (match) {
                     var base = apiBase || (typeof window !== 'undefined' && window.location ? window.location.origin : '');
-                    var path = (prefix + '/' + match[1]).replace(/\/+/g, '/');
-                    var fullUrl = base ? (base.replace(/\/$/, '') + path) : path;
+                    var path = (prefix + '/' + match[1]).replace(/\/$/+/g, '/');
+                    var fullUrl = base ? (base.replace(/\/$/$/, '') + path) : path;
                     var opts = { method: options.method || 'GET', headers: options.headers || {} };
                     if (opts.method !== 'GET' && options.body) opts.body = options.body;
                     if (typeof opts.headers === 'object' && !(opts.headers instanceof Headers)) {
@@ -485,7 +485,7 @@
 
             // Mode API réelle : appel POST /api/v1/auth/login
             if (window.__CC_USE_REAL_API__) {
-                const apiBase = (window.__CC_API_BASE__ || '').replace(/\/$/, '');
+                const apiBase = (window.__CC_API_BASE__ || '').replace(/\/$/$/, '');
                 const prefix = window.__CC_API_PREFIX__ || '/api/v1';
                 const url = apiBase + prefix + '/auth/login';
                 fetch(url, {

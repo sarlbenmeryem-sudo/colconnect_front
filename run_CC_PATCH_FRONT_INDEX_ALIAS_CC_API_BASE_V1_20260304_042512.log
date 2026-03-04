@@ -1,0 +1,10 @@
+== [CC_PATCH_FRONT_INDEX_ALIAS_CC_API_BASE_V1_20260304] Start ==
+✅ inserted alias script after _CC_API_BASE_
+
+== quick grep ==
+202:    window._CC_API_BASE_ = 'https://api.colconnect.fr';
+203:    window.__CC_API_BASE__ = window._CC_API_BASE_;
+377:        <p id="arb-pourquoi">Vérifie _CC_API_BASE_ / le port 8001 / CORS. (UI stable)</p>
+204:    window.__CC_API_PREFIX__ = window.__CC_API_PREFIX__ || "/api/v1";
+
+== [CC_PATCH_FRONT_INDEX_ALIAS_CC_API_BASE_V1_20260304] Done ==

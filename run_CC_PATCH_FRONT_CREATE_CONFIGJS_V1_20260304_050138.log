@@ -1,0 +1,16 @@
+== [CC_PATCH_FRONT_CREATE_CONFIGJS_V1_20260304] Start ==
+✅ Created assets/js/config.js
+
+== File content ==
+/*
+ ColConnect Frontend Configuration
+ This file defines the API endpoint used by the frontend.
+ Loaded before main.js
+*/
+
+window.__CC_API_BASE__ = "https://api.colconnect.fr";
+window.__CC_API_PREFIX__ = "/api/v1";
+
+== Quick check ==
+-rwxrwxrwx 1 benmeryem benmeryem 215 Mar  4 05:01 assets/js/config.js
+== [CC_PATCH_FRONT_CREATE_CONFIGJS_V1_20260304] Done ==

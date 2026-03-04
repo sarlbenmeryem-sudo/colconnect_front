@@ -1,0 +1,8 @@
+== [CC_PATCH_FRONT_INDEX_LOAD_CONFIGJS_V1_20260304] Start ==
+✅ Backup créé: index.html.bak.configjs.20260304_050528
+✅ config.js inséré avant main.js
+
+== Vérification ==
+4613:    <script src="assets/js/config.js"></script>
+4614:<script src="assets/js/main.js"></script>
+== [CC_PATCH_FRONT_INDEX_LOAD_CONFIGJS_V1_20260304] Done ==

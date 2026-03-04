@@ -1,0 +1,36 @@
+== [CC_PATCH_FRONT_RESTORE_MAINJS_FROM_COMMIT_F705B6E_V1_20260304] Start ==
+✅ Backup: assets/js/main.js.bak.restore_f705b6e.20260304_045031
+✅ Restored assets/js/main.js from commit f705b6e
+
+== grep apiBase line ==
+352:            var apiBase = (window.__CC_API_BASE__ || '').replace(/\/$/, '');
+
+✅ node -c OK: assets/js/main.js
+
+== head -n 25 ==
+/* CC_PATCH:STAT_COLLECTIVITES_TO_20_V1 */
+        // ColConnect - main.js | v1.0 | Extrait de v8.html script 1 | Dépendances: aucune
+        // ========================
+        // PROJECTS DATABASE (for global map)
+        // 20 collectivités, 6 projets chacune = 120 projets. Adresses cohérentes. Pastille couleur par collectivité.
+        // ========================
+        const COLLECTIVITES_REF = [
+            {id:'lyon',nom:'Ville de Lyon',couleur:'#1e3a5f'},{id:'paris',nom:'Ville de Paris',couleur:'#6366f1'},{id:'marseille',nom:'Ville de Marseille',couleur:'#ec4899'},{id:'bordeaux',nom:'Ville de Bordeaux',couleur:'#06b6d4'},{id:'nantes',nom:'Ville de Nantes',couleur:'#84cc16'},{id:'toulouse',nom:'Ville de Toulouse',couleur:'#f59e0b'},{id:'nice',nom:'Ville de Nice',couleur:'#8b5cf6'},{id:'strasbourg',nom:'Ville de Strasbourg',couleur:'#14b8a6'},{id:'montpellier',nom:'Ville de Montpellier',couleur:'#f97316'},{id:'lille',nom:'Ville de Lille',couleur:'#3b82f6'},{id:'rennes',nom:'Ville de Rennes',couleur:'#eab308'},{id:'grenoble',nom:'Ville de Grenoble',couleur:'#10b981'},{id:'dijon',nom:'Ville de Dijon',couleur:'#d946ef'},{id:'angers',nom:"Ville d'Angers",couleur:'#0ea5e9'},{id:'nimes',nom:'Ville de Nîmes',couleur:'#64748b'},{id:'rhone',nom:'Département du Rhône',couleur:'#991b1b'},{id:'gironde',nom:'Département de la Gironde',couleur:'#2d6a4f'},{id:'bdr',nom:'Département des Bouches-du-Rhône',couleur:'#c9a227'},{id:'aura',nom:'Région Auvergne-Rhône-Alpes',couleur:'#ef4444'},{id:'naquit',nom:'Région Nouvelle-Aquitaine',couleur:'#a855f7'}
+        ];
+        var COLLECTIVITES_CP_VILLE = { lyon:'69001 Lyon',paris:'75001 Paris',marseille:'13001 Marseille',bordeaux:'33000 Bordeaux',nantes:'44000 Nantes',toulouse:'31000 Toulouse',nice:'06000 Nice',strasbourg:'67000 Strasbourg',montpellier:'34000 Montpellier',lille:'59000 Lille',rennes:'35000 Rennes',grenoble:'38000 Grenoble',dijon:'21000 Dijon',angers:'49100 Angers',nimes:'30000 Nîmes',rhone:'69000 Lyon',gironde:'33000 Bordeaux',bdr:'13001 Marseille',aura:'69000 Lyon',naquit:'33000 Bordeaux' };
+        function getAnalyseForProject(p) {
+            if (!p) return '—';
+            if (p.analyse && String(p.analyse).trim()) return p.analyse;
+            var t = (p.type || '').toLowerCase();
+            if (t.indexOf('patrimoine')>=0) return 'Rénovation ou valorisation du bâti patrimonial. Conformité énergétique et objectifs Décret Tertiaire intégrés au programme.';
+            if (t.indexOf('éducation')>=0) return 'Bâtiment éducatif. Performance énergétique, confort et qualité de l\'air au programme.';
+            if (t.indexOf('petite enfance')>=0) return 'Équipement petite enfance. Enjeux sanitaires et énergétiques conformes aux normes.';
+            if (t.indexOf('culture')>=0) return 'Équipement culturel. Impact patrimonial et maîtrise énergétique pris en compte.';
+            if (t.indexOf('sport')>=0) return 'Équipement sportif. Performance énergétique et toiture/ENR possibles (solaire, etc.).';
+            if (t.indexOf('santé')>=0) return 'Bâtiment de santé. Exigences énergétiques et sanitaires intégrées.';
+            if (t.indexOf('urbanisme')>=0) return 'Projet d\'urbanisme ou d\'écoquartier. Dimension énergie et patrimoine dans l\'aménagement.';
+            if (t.indexOf('espaces verts')>=0) return 'Aménagement d\'espaces verts. Impact paysager et biodiversité; lien avec le bâti limité.';
+            if (t.indexOf('mobilité')>=0) return 'Projet mobilité/voirie. Impact indirect sur le patrimoine et les déplacements.';
+            if (t.indexOf('transport')>=0) return 'Infrastructure de transport. Enjeux structurants; dimension énergétique des bâtiments associés.';
+            if (t.indexOf('infrastructure')>=0) return 'Infrastructure. Enjeux techniques et durabilité.';
+== [CC_PATCH_FRONT_RESTORE_MAINJS_FROM_COMMIT_F705B6E_V1_20260304] Done ==

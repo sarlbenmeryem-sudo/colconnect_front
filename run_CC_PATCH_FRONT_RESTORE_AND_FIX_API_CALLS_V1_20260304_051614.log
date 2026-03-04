@@ -1,0 +1,12 @@
+== [CC_PATCH_FRONT_RESTORE_AND_FIX_API_CALLS_V1_20260304] Start ==
+== Backup files ==
+✅ backups: assets/js/main.js.bak.20260304_051614 , assets/js/patches.js.bak.20260304_051614
+== Restore clean versions from current HEAD (discard local corruption on these 2 files only) ==
+
+== Fix: assets/js/main.js ==
+✅ patched: assets/js/main.js
+
+== Fix: assets/js/patches.js ==
+✅ patched: assets/js/patches.js
+
+== Syntax check (node) ==
