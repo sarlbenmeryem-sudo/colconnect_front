@@ -44,24 +44,7 @@
    * ATTENTION: Modification globale - peut affecter d'autres scripts
    * Empêche le blocage du scroll sauf dans les zones autorisées
    */
-  (function patchPreventDefault(){
-    try {
-      // Évite la double application du patch
-      if (window.__cc_pd_patched_v2) return;
-      window.__cc_pd_patched_v2 = true;
-
-      const orig = Event.prototype.preventDefault;
-      Event.prototype.preventDefault = function(){
-        // Autorise le scroll natif sauf dans les zones map/spéciales
-        if ((this.type === 'wheel' || this.type === 'touchmove') && !inAllowedNoScrollZone(this.target)){
-          return;
-        }
-        return orig.call(this);
-      };
-    } catch(e) {
-      console.warn('[CC] patchPreventDefault error', e);
-    }
-  })();
+  
 
   // Exécution au chargement du DOM
   if (document.readyState === 'loading'){
