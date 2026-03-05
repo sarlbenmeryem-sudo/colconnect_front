@@ -1,4 +1,4 @@
-/* ColConnect - patches.js | v1.1 | CC_PATCH_FIX_SCROLL_FREEZE_V2 | Dépendances: aucune */
+﻿/* ColConnect - patches.js | v1.1 | CC_PATCH_FIX_SCROLL_FREEZE_V2 | Dépendances: aucune */
 /* CC_PATCH_FIX_SCROLL_FREEZE_V2 (enrichi V1 - Corrigé) */
 (function(){
   /**
@@ -71,7 +71,13 @@
   }
 
   // Watchdog: vérifie périodiquement le déblocage du scroll
-  setInterval(unlockCSSScroll, 600);
+  if (!window.__cc_scroll_perf_v24b) { 
+  /*__CC_EXPORT_SCROLL_SYMBOLS_V1__*/
+  try {
+    window.__cc_unlockCSSScroll = unlockCSSScroll;
+    window.__cc_OVERLAY_SELECTORS = (typeof OVERLAY_SELECTORS !== "undefined") ? OVERLAY_SELECTORS : "";
+  } catch(e) {}
+setInterval(window.__cc_unlockCSSScroll, 600); }
 })();
 
 /* =========================================================
@@ -162,5 +168,117 @@
     document.addEventListener("DOMContentLoaded", fetchExecutive);
   } else {
     fetchExecutive();
+  }
+})();
+
+
+
+
+/*__CC_SCROLL_PERF_UPGRADE_V24b__*/
+/*__CC_FORCE_WD_TIMER_V1__*/
+(function(){
+  try {
+    if (window.__CC_DISABLE_SCROLL_WATCHDOG__) return;
+    if (typeof window.__cc_unlockCSSScroll !== "function") return;
+    if (!window.__cc_scroll_wd_timer) {
+      window.__cc_scroll_wd_timer = setInterval(window.__cc_unlockCSSScroll, 1200);
+      if (window.__CC_DEBUG__) console.debug("[CC] forced __cc_scroll_wd_timer created");
+    }
+  } catch(e) {}
+})();
+
+(function(){
+  try {
+    // Visible flag to verify in console
+    window.__cc_scroll_perf_v24b = true;
+
+    // Optional debug logs
+    if (window.__CC_DEBUG__) console.debug("[CC] scroll perf upgrade v24b loaded");
+
+    // If user disabled watchdog, do nothing
+    if (window.__CC_DISABLE_SCROLL_WATCHDOG__) return;
+
+    // Prefer not to scan DOM on interval; use MutationObserver to track overlays
+    var __cc_overlay_active = false;
+    function __cc_overlay_compute(){
+      try { __cc_overlay_active = !!document.querySelector(window.__cc_OVERLAY_SELECTORS); } catch(e){ __cc_overlay_active = false; }
+    }
+
+    try {
+      var mo = new MutationObserver(function(){
+        var prev = __cc_overlay_active;
+        __cc_overlay_compute();
+        if (prev && !__cc_overlay_active) {
+          try { unlockCSSScroll(); } catch(_) {}
+        }
+      });
+
+      function startObs(){
+        __cc_overlay_compute();
+        if (document.body) {
+          mo.observe(document.body, { attributes:true, attributeFilter:["class"], subtree:true, childList:true });
+        }
+      }
+
+      if (document.body) startObs();
+      else document.addEventListener("DOMContentLoaded", startObs);
+    } catch(e) {
+      if (window.__CC_DEBUG__) console.warn("[CC] MutationObserver unavailable", e);
+    }
+
+    // Adaptive watchdog: slow down when stable
+    var wdMs = 1200;
+    var stable = 0;
+
+    // Wrap unlockCSSScroll to detect whether a "fix" was applied
+    var __cc_unlock_orig = window.__cc_unlockCSSScroll;
+    window.__cc_unlockCSSScroll = function(){
+      if (__cc_overlay_active) return;
+
+      var before = null;
+      try {
+        var html = document.documentElement, body = document.body;
+        if (body) {
+          var hc = getComputedStyle(html), bc = getComputedStyle(body);
+          before = { h: hc.overflowY, b: bc.overflowY, p: bc.position };
+        }
+      } catch(e) {}
+
+      __cc_unlock_orig();
+
+      var changed = false;
+      try {
+        var html2 = document.documentElement, body2 = document.body;
+        if (body2 && before) {
+          var hc2 = getComputedStyle(html2), bc2 = getComputedStyle(body2);
+          changed = (before.h === "hidden" && hc2.overflowY !== "hidden") ||
+                    (before.b === "hidden" && bc2.overflowY !== "hidden") ||
+                    (before.p === "fixed"  && bc2.position !== "fixed");
+        }
+      } catch(e) {}
+
+      if (changed) {
+        stable = 0;
+        if (wdMs !== 1200) {
+          wdMs = 1200;
+          if (window.__cc_scroll_wd_timer) clearInterval(window.__cc_scroll_wd_timer);
+          window.__cc_scroll_wd_timer = setInterval(window.__cc_unlockCSSScroll, wdMs);
+        }
+      } else {
+        stable++;
+        if (stable >= 10 && wdMs !== 8000) {
+          wdMs = 8000;
+          if (window.__cc_scroll_wd_timer) clearInterval(window.__cc_scroll_wd_timer);
+          window.__cc_scroll_wd_timer = setInterval(window.__cc_unlockCSSScroll, wdMs);
+        }
+      }
+    };
+
+    // Replace existing interval with managed one
+    if (window.__cc_scroll_wd_timer) clearInterval(window.__cc_scroll_wd_timer);
+    window.__cc_scroll_wd_timer = setInterval(window.__cc_unlockCSSScroll, 1200);
+
+  } catch(e) {
+    if (window.__CC_DEBUG__) console.warn("[CC] scroll perf upgrade failed", e);
   }
 })();
