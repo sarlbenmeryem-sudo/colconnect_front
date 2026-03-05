@@ -6,3 +6,5 @@ index.html.bak.*
 .github/workflows/*.bak.*
 CC_PATCH_*.sh
 _backups_js_*
+assets/js/patch back/
+front/
