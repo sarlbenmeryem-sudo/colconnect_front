@@ -5,3 +5,4 @@
 index.html.bak.*
 .github/workflows/*.bak.*
 CC_PATCH_*.sh
+_backups_js_*
