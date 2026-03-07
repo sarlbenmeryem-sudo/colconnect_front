@@ -13,6 +13,18 @@ console.log('[Arbitrage Module] File loaded!');
 
   // Configuration API
   const API_BASE = window._CC_API_BASE_ || '';
+
+  function __ccArbCollectiviteId() {
+    try {
+      const raw = localStorage.getItem("currentUser");
+      if (raw) {
+        const u = JSON.parse(raw);
+        return u?.collectivite_id || u?.collectiviteId || u?.collectivite || "nova-sur-marne-94000";
+      }
+    } catch(e) {}
+    return "nova-sur-marne-94000";
+  }
+
   
   // État local
   let state = {
@@ -153,7 +165,7 @@ function escapeHtml(s) {
   }
 
   async function fetchStatus() {
-    return apiCall('/arbitrage/status');
+    return apiCall(`/v1/collectivites/${window.__ccArbCollectiviteId()}/arbitrage:last`);
   }
 
   async function fetchProjects() {

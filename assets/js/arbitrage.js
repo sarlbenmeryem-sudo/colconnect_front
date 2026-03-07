@@ -74,7 +74,10 @@
   async function fetchStatus() {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', `${API_BASE}/api/arbitrage/status`, true);
+      const collectiviteId = window.__ccArbCollectiviteId();
+      xhr.open('GET', `${API_BASE}/api/v1/collectivites/${collectiviteId}/arbitrage:last`, true);
+      const __h = __ccArbAuthHeaders();
+      Object.keys(__h).forEach(k => xhr.setRequestHeader(k, __h[k]));
       xhr.setRequestHeader('Content-Type', 'application/json');
       
       xhr.onload = function() {

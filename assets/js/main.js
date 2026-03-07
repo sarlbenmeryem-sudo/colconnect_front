@@ -349,6 +349,11 @@
         const originalFetch = window.fetch;
         window.fetch = async function(url, options) {
             options = options || {};
+            var rawUrl = String(url || "");
+            if (/arbitrage(?::run|:last|:full|\/|$)/.test(rawUrl)) {
+                return originalFetch.call(window, url, options);
+            }
+            options = options || {};
             var apiBase = (window.__CC_API_BASE__ || '').replace(/\/$/, '');
             var prefix = window.__CC_API_PREFIX__ || '/api/v1';
 
