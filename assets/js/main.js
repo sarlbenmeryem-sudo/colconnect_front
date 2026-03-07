@@ -881,9 +881,6 @@
                     <button class="nav-tab active" data-section="dashboard" onclick="navigateTo('dashboard')">
                         <i class="fas fa-home"></i><span>Accueil</span>
                     </button>
-                    <button class="nav-tab" data-section="search" onclick="navigateTo('search')">
-                        <i class="fas fa-search-location"></i><span>Recherche</span>
-                    </button>
                     <button class="nav-tab" data-section="projets" onclick="navigateTo('projets')">
                         <i class="fas fa-tasks"></i><span>Projets</span>
                     </button>
