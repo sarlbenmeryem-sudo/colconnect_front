@@ -1247,7 +1247,15 @@
             if (typeLabel && (el = document.getElementById('collectiviteType'))) el.textContent = typeLabel;
             var ficheTypeBadge = document.querySelector('#fiche .fiche-type-badge');
             if (typeLabel && ficheTypeBadge) ficheTypeBadge.textContent = typeLabel;
+            updateCollectiviteDetails(infos || {});
         }
+
+function updateCollectiviteDetails(data) {
+  let el;
+  if (el = document.getElementById("collectiviteInsee")) el.textContent = data.code_insee || "—";
+  if (el = document.getElementById("collectiviteEpci")) el.textContent = data.epci || "—";
+  if (el = document.getElementById("collectivitePop")) el.textContent = data.population || "—";
+}
 
         var currentSearchFilter = 'all';
         function applySearchFilter() {

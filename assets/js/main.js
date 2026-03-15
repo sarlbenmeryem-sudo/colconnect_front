@@ -473,8 +473,56 @@
             }
         };
 
+        const sm = ColConnectStateMachine.create();
+        window.sm = sm;
+        sm.subscribe(snapshot => {
+            console.log('[STATE]', snapshot.state);
+        });
+
         // Simulation de session utilisateur
         let currentUser = null;
+
+        function getStateMachineCollectiviteId() {
+            if (currentUser && currentUser.collectiviteId) return String(currentUser.collectiviteId);
+            if (document.body && document.body.dataset && document.body.dataset.collectiviteId) {
+                return String(document.body.dataset.collectiviteId);
+            }
+            return null;
+        }
+
+        function ensureStateMachineReady() {
+            if (!window.sm || typeof window.sm.send !== 'function') return false;
+            const snapshot = window.sm.getSnapshot();
+            if (snapshot && snapshot.state === window.sm.STATES.BOOT) {
+                window.sm.send('APP_LOADED');
+            }
+            return true;
+        }
+
+        function sendStateMachineEvent(eventType, payload) {
+            if (!ensureStateMachineReady()) return null;
+            return window.sm.send(eventType, payload || {});
+        }
+
+        function mapSectionToStateEvent(sectionId, payload) {
+            switch (sectionId) {
+                case 'dashboard':
+                    return { type: 'NAVIGATE_DASHBOARD', payload: payload || {} };
+                case 'priv-collectivite':
+                    return {
+                        type: 'NAVIGATE_COLLECTIVITE_HOME',
+                        payload: Object.assign({ collectiviteId: getStateMachineCollectiviteId() }, payload || {})
+                    };
+                case 'priv-projets':
+                    return { type: 'NAVIGATE_PROJETS', payload: payload || {} };
+                case 'validation-mensuelle':
+                    return { type: 'NAVIGATE_VALIDATION', payload: payload || {} };
+                case 'priv-patrimoine':
+                    return { type: 'NAVIGATE_PATRIMOINE', payload: payload || {} };
+                default:
+                    return null;
+            }
+        }
 
         // Sélecteurs utiles
         const overlay = document.getElementById('loginOverlay');
@@ -562,6 +610,15 @@
             applyRoleRestrictions(currentUser);
             updateUserBadge();
             document.body.dataset.role = currentUser.role;
+            if (currentUser && currentUser.collectiviteId) {
+                document.body.dataset.collectiviteId = currentUser.collectiviteId;
+            }
+            sendStateMachineEvent('LOGIN_SUCCESS', {
+                token: currentUser.accessToken || 'demo-token',
+                collectiviteId: currentUser.collectiviteId || 'demo',
+                role: currentUser.role || 'collectivite',
+                scopes: Array.isArray(currentUser.scopes) ? currentUser.scopes : []
+            });
             console.log('[ColConnect] data-role défini à:', currentUser.role);
             overlay.classList.add('hidden');
             logAction("Connexion réussie", "Authentification", "login");
@@ -917,6 +974,7 @@
 
         // Initialisation au chargement du DOM
         document.addEventListener('DOMContentLoaded', function() {
+            ensureStateMachineReady();
             // Vérifier session existante
             checkExistingSession();
 
@@ -953,7 +1011,16 @@
         // NAVIGATION
         // ========================
 
-        function navigateTo(sectionId) {
+        function navigateTo(sectionId, payload) {
+            var mappedEvent = mapSectionToStateEvent(sectionId, payload);
+            if (mappedEvent) {
+                sendStateMachineEvent(mappedEvent.type, mappedEvent.payload);
+                return;
+            }
+            __ccNavigateInternal(sectionId);
+        }
+
+        function __ccNavigateInternal(sectionId) {
             if (sectionId === 'detail' && typeof currentMode !== 'undefined' && currentMode === 'public') return;
             if (!sectionId) return;
             var navTabs = document.querySelectorAll('.nav-tab');
@@ -1023,6 +1090,8 @@
                 setTimeout(checkCollectiviteOwner, 500);
             }
         }
+        window.navigateTo = navigateTo;
+        window.__ccNavigateInternal = __ccNavigateInternal;
 
         // Vérifie si l'utilisateur est le propriétaire de la fiche collectivité
         function checkCollectiviteOwner() {
@@ -1249,7 +1318,15 @@
             if (typeLabel && (el = document.getElementById('collectiviteType'))) el.textContent = typeLabel;
             var ficheTypeBadge = document.querySelector('#fiche .fiche-type-badge');
             if (typeLabel && ficheTypeBadge) ficheTypeBadge.textContent = typeLabel;
+            updateCollectiviteDetails(infos || {});
         }
+
+function updateCollectiviteDetails(data) {
+  let el;
+  if (el = document.getElementById("collectiviteInsee")) el.textContent = data.code_insee || "—";
+  if (el = document.getElementById("collectiviteEpci")) el.textContent = data.epci || "—";
+  if (el = document.getElementById("collectivitePop")) el.textContent = data.population || "—";
+}
 
         var currentSearchFilter = 'all';
         function applySearchFilter() {
@@ -1422,24 +1499,45 @@
         function openProjetById(id) {
             if (typeof currentMode !== 'undefined' && currentMode === 'public') return;
             window.__detailFromAdminValidation = false;
-            const list = window.__currentProjets || window.__currentPrivProjets || [];
-            const p = list.find(x => x.id == id);
-            if (p) { window.__currentProjet = p; populateProjectDetails(p); navigateTo('detail'); }
-            else { const dt = document.getElementById('detailTitle'); if (dt) dt.textContent = 'Projet'; navigateTo('detail'); }
+            openProjetDetailFromDb(id);
         }
-        function openProjetDetailFromDb(id) {
+
+        function __ccOpenProjetDetailFromDbInternal(id) {
             if (typeof currentMode !== 'undefined' && currentMode === 'public') return;
             window.__detailFromAdminValidation = false;
             var db = (typeof projectsDatabase !== 'undefined') ? projectsDatabase : [];
             var userList = (typeof __userCreatedProjets !== 'undefined' && Array.isArray(__userCreatedProjets)) ? __userCreatedProjets : [];
             var d = db.find(function(x){ return x.id == id; }) || userList.find(function(x){ return x.id == id; });
-            if (!d) { var dt = document.getElementById('detailTitle'); if (dt) dt.textContent = 'Projet'; if (typeof navigateTo === 'function') navigateTo('detail'); return; }
+            if (!d) { var dt = document.getElementById('detailTitle'); if (dt) dt.textContent = 'Projet'; __ccNavigateInternal('detail'); return; }
             var c = (typeof COLLECTIVITES_REF !== 'undefined') && COLLECTIVITES_REF.find(function(x){ return x.id === (d.collectiviteId || ''); });
             var p = { id: d.id, code: formatProjetCode(d.id), name: d.name, title: d.name, status: d.status || 'etude', etudes: d.progressEtudes || 0, travaux: d.progressTravaux || 0, budget: (d.budget != null ? d.budget + 'M€' : '—'), adresse: d.adresse || '—', date: d.date || '—', type: d.type, collectivite: d.collectivite || '', collectiviteCouleur: (c && c.couleur) ? c.couleur : '#718096' };
             window.__currentProjet = p;
             if (typeof populateProjectDetails === 'function') populateProjectDetails(p);
-            if (typeof navigateTo === 'function') navigateTo('detail');
+            __ccNavigateInternal('detail');
         }
+
+        function openProjetDetailFromDb(id) {
+            if (typeof currentMode !== 'undefined' && currentMode === 'public') return;
+            var eventType = 'OPEN_PROJET_COLLECTIVITE';
+            if (ensureStateMachineReady()) {
+                var snapshot = window.sm.getSnapshot();
+                var globalStates = [
+                    window.sm.STATES.DASHBOARD_GLOBAL,
+                    window.sm.STATES.GLOBAL_MAP,
+                    window.sm.STATES.GLOBAL_SEARCH,
+                    window.sm.STATES.PROJECT_DETAIL_GLOBAL
+                ];
+                if (snapshot && globalStates.indexOf(snapshot.state) !== -1) {
+                    eventType = 'OPEN_PROJET_GLOBAL';
+                }
+            }
+            sendStateMachineEvent(eventType, {
+                projectId: id,
+                collectiviteId: getStateMachineCollectiviteId()
+            });
+        }
+        window.openProjetDetailFromDb = openProjetDetailFromDb;
+        window.__ccOpenProjetDetailFromDbInternal = __ccOpenProjetDetailFromDbInternal;
 
         // Liste des projets de la collectivité visitée (page Projets)
         window.mesProjetsCourants = [];
@@ -3476,8 +3574,13 @@ function renderMesProjets(data) {
             renderValProjectsTable();
         }
 
-        function voirValProject(id) {
+        function __ccVoirValProjectInternal(id) {
             selectValProject(id);
+            openAnomaliesDrawer(id);
+        }
+
+        function voirValProject(id) {
+            sendStateMachineEvent('OPEN_VALIDATION_DRAWER', { projectId: id });
         }
 
         function openAnomaliesDrawer(projectId) {
@@ -3501,7 +3604,7 @@ function renderMesProjets(data) {
             if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        function closeAnomaliesDrawer() {
+        function __ccCloseAnomaliesDrawerInternal() {
             const dr = document.getElementById('anomaliesDrawer');
             const wrapper = document.getElementById('valDrawerStickyWrapper');
             if (dr) dr.classList.remove('open');
@@ -3510,15 +3613,31 @@ function renderMesProjets(data) {
             renderValProjectsTable();
         }
 
-        function goToProjectFromDrawer() {
+        function closeAnomaliesDrawer() {
+            sendStateMachineEvent('CLOSE_DRAWER');
+        }
+
+        function __ccGoToProjectFromDrawerInternal() {
             const id = __valSelectedProjectId;
-            closeAnomaliesDrawer();
+            __ccCloseAnomaliesDrawerInternal();
             if (id && typeof openProjetDetailFromDb === 'function') {
-                openProjetDetailFromDb(id);
+                __ccOpenProjetDetailFromDbInternal(id);
             } else if (id) {
-                navigateTo('priv-projets');
+                __ccNavigateInternal('priv-projets');
             }
         }
+
+        function goToProjectFromDrawer() {
+            sendStateMachineEvent('OPEN_PROJET_FROM_DRAWER', {
+                projectId: __valSelectedProjectId
+            });
+        }
+        window.voirValProject = voirValProject;
+        window.__ccVoirValProjectInternal = __ccVoirValProjectInternal;
+        window.closeAnomaliesDrawer = closeAnomaliesDrawer;
+        window.__ccCloseAnomaliesDrawerInternal = __ccCloseAnomaliesDrawerInternal;
+        window.goToProjectFromDrawer = goToProjectFromDrawer;
+        window.__ccGoToProjectFromDrawerInternal = __ccGoToProjectFromDrawerInternal;
 
         function onValSignatureModeChange() {
             const res = document.getElementById('valReserveWrap');
@@ -3619,7 +3738,7 @@ function renderMesProjets(data) {
 
   // If no section is active at load, default to dashboard
   const anyActive = document.querySelector('.section.active');
-  if (!anyActive) navigateTo('dashboard');
+  if (!anyActive) __ccNavigateInternal('dashboard');
 })();
 
 
