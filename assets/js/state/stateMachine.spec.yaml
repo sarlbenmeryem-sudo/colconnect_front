@@ -1,0 +1,696 @@
+# ColConnect — State Machine Specification v1.0
+# ════════════════════════════════════════════════════════════════════
+#
+# Table exhaustive : état courant × événement → transition
+# Fichier source de vérité pour stateMachine.js
+#
+# Structure :
+#   - states: définition des 13 états
+#   - events: définition des 21 événements
+#   - shells: 3 shells de rendu
+#   - context_schema: schéma du contexte
+#   - transitions: table complète [état][événement] → { target, guard, effect, fallback }
+#   - forbidden: transitions explicitement interdites
+#   - invariants: règles qui ne doivent jamais être violées
+
+# ════════════════════════════════════════════════════════════════════
+# ÉTATS (13)
+# ════════════════════════════════════════════════════════════════════
+states:
+  S0_BOOT:
+    id: BOOT
+    shell: public
+    description: "Application en cours de chargement"
+    entry_condition: "Démarrage de l'application"
+    allowed_exits: [LOGIN]
+
+  S1_LOGIN:
+    id: LOGIN
+    shell: public
+    description: "Écran de connexion"
+    entry_condition: "APP_LOADED ou LOGOUT"
+    allowed_exits: [DASHBOARD_GLOBAL]
+
+  S2_DASHBOARD_GLOBAL:
+    id: DASHBOARD_GLOBAL
+    shell: global
+    description: "Tableau de bord multi-collectivités"
+    entry_condition: "LOGIN_SUCCESS ou retour depuis écran global"
+    allowed_exits: [COLLECTIVITE_HOME, GLOBAL_MAP, GLOBAL_SEARCH, LOGIN]
+
+  S3_COLLECTIVITE_HOME:
+    id: COLLECTIVITE_HOME
+    shell: collectivite
+    description: "Accueil de la collectivité (fiche identité, navigation modules)"
+    entry_condition: "NAVIGATE_COLLECTIVITE_HOME depuis dashboard"
+    allowed_exits: [COLLECTIVITE_PROJETS, COLLECTIVITE_VALIDATION, COLLECTIVITE_PATRIMOINE, DASHBOARD_GLOBAL, LOGIN]
+
+  S4_COLLECTIVITE_PROJETS:
+    id: COLLECTIVITE_PROJETS
+    shell: collectivite
+    description: "Liste des projets de la collectivité"
+    entry_condition: "NAVIGATE_PROJETS depuis Home collectivité"
+    allowed_exits: [PROJET_DETAIL_COLLECTIVITE, COLLECTIVITE_HOME, LOGIN]
+
+  S5_COLLECTIVITE_VALIDATION:
+    id: COLLECTIVITE_VALIDATION
+    shell: collectivite
+    description: "Validation mensuelle — liste projets à valider/corriger"
+    entry_condition: "NAVIGATE_VALIDATION depuis Home collectivité"
+    allowed_exits: [PROJECT_DRAWER_VALIDATION, COLLECTIVITE_HOME, LOGIN]
+    forbidden_exits: [DASHBOARD_GLOBAL]
+
+  S6_COLLECTIVITE_PATRIMOINE:
+    id: COLLECTIVITE_PATRIMOINE
+    shell: collectivite
+    description: "Patrimoine bâti de la collectivité"
+    entry_condition: "NAVIGATE_PATRIMOINE depuis Home collectivité"
+    allowed_exits: [BATIMENT_DETAIL_COLLECTIVITE, COLLECTIVITE_HOME, LOGIN]
+
+  S7_PROJET_DETAIL_COLLECTIVITE:
+    id: PROJET_DETAIL_COLLECTIVITE
+    shell: collectivite
+    description: "Fiche projet dans le shell collectivité"
+    entry_condition: "OPEN_PROJET_COLLECTIVITE ou OPEN_PROJET_FROM_DRAWER"
+    allowed_exits: ["(contextuel: COLLECTIVITE_PROJETS | COLLECTIVITE_VALIDATION | COLLECTIVITE_PATRIMOINE)", LOGIN]
+    forbidden_exits: [DASHBOARD_GLOBAL, GLOBAL_MAP, GLOBAL_SEARCH]
+
+  S8_BATIMENT_DETAIL_COLLECTIVITE:
+    id: BATIMENT_DETAIL_COLLECTIVITE
+    shell: collectivite
+    description: "Fiche bâtiment dans le shell collectivité"
+    entry_condition: "OPEN_BATIMENT depuis Patrimoine"
+    allowed_exits: [COLLECTIVITE_PATRIMOINE, LOGIN]
+
+  S9_PROJECT_DRAWER_VALIDATION:
+    id: PROJECT_DRAWER_VALIDATION
+    shell: collectivite
+    description: "Drawer d'anomalies d'un projet (ouvert depuis Validation)"
+    entry_condition: "OPEN_VALIDATION_DRAWER (clic Voir)"
+    allowed_exits: [PROJET_DETAIL_COLLECTIVITE, COLLECTIVITE_VALIDATION, LOGIN]
+    forbidden_exits: [DASHBOARD_GLOBAL]
+
+  S10_GLOBAL_MAP:
+    id: GLOBAL_MAP
+    shell: global
+    description: "Carte globale de tous les projets"
+    entry_condition: "NAVIGATE_GLOBAL_MAP depuis Dashboard"
+    allowed_exits: [PROJECT_DETAIL_GLOBAL, DASHBOARD_GLOBAL, LOGIN]
+
+  S11_GLOBAL_SEARCH:
+    id: GLOBAL_SEARCH
+    shell: global
+    description: "Recherche globale multi-collectivités"
+    entry_condition: "NAVIGATE_GLOBAL_SEARCH depuis Dashboard"
+    allowed_exits: [PROJECT_DETAIL_GLOBAL, DASHBOARD_GLOBAL, LOGIN]
+
+  S12_PROJECT_DETAIL_GLOBAL:
+    id: PROJECT_DETAIL_GLOBAL
+    shell: global
+    description: "Fiche projet dans le shell global (depuis carte ou recherche)"
+    entry_condition: "OPEN_PROJET_GLOBAL depuis carte ou recherche"
+    allowed_exits: ["(contextuel: GLOBAL_MAP | GLOBAL_SEARCH | DASHBOARD_GLOBAL)", LOGIN]
+
+# ════════════════════════════════════════════════════════════════════
+# ÉVÉNEMENTS (21)
+# ════════════════════════════════════════════════════════════════════
+events:
+  # Système
+  APP_LOADED:
+    trigger: "DOMContentLoaded / app init"
+    payload: {}
+    description: "L'application a fini de charger"
+
+  LOGIN_SUCCESS:
+    trigger: "Callback API auth"
+    payload: { token: string, collectiviteId: string, role: Role, scopes: string[] }
+    description: "Authentification réussie"
+
+  LOGOUT:
+    trigger: "Clic bouton déconnexion"
+    payload: {}
+    description: "Déconnexion utilisateur"
+
+  # Navigation globale
+  NAVIGATE_COLLECTIVITE_HOME:
+    trigger: "Clic 'Accéder à ma collectivité' sur dashboard"
+    payload: { collectiviteId?: string }
+    description: "Naviguer vers l'accueil collectivité"
+
+  NAVIGATE_GLOBAL_MAP:
+    trigger: "Clic onglet Carte"
+    payload: {}
+    description: "Naviguer vers la carte globale"
+
+  NAVIGATE_GLOBAL_SEARCH:
+    trigger: "Clic onglet Recherche"
+    payload: {}
+    description: "Naviguer vers la recherche globale"
+
+  NAVIGATE_DASHBOARD:
+    trigger: "Clic logo / retour dashboard"
+    payload: {}
+    description: "Retour au dashboard global"
+
+  # Navigation collectivité
+  NAVIGATE_PROJETS:
+    trigger: "Clic 'Mes projets'"
+    payload: {}
+    description: "Naviguer vers la liste projets collectivité"
+
+  NAVIGATE_VALIDATION:
+    trigger: "Clic 'Validation mensuelle'"
+    payload: {}
+    description: "Naviguer vers la validation"
+
+  NAVIGATE_PATRIMOINE:
+    trigger: "Clic 'Patrimoine'"
+    payload: {}
+    description: "Naviguer vers le patrimoine bâti"
+
+  NAVIGATE_COLLECTIVITE_BACK:
+    trigger: "Clic flèche retour / breadcrumb"
+    payload: {}
+    description: "Retour à Home collectivité"
+
+  # Ouverture fiches
+  OPEN_PROJET_COLLECTIVITE:
+    trigger: "Clic carte projet dans Mes Projets"
+    payload: { projectId: string, collectiviteId: string }
+    description: "Ouvrir une fiche projet (shell collectivité)"
+    maps_to: "openProjetDetailFromDb(id) / openProjetFromMesProjets(index)"
+
+  OPEN_PROJET_GLOBAL:
+    trigger: "Clic marqueur carte globale / résultat recherche"
+    payload: { projectId: string, collectiviteId: string }
+    description: "Ouvrir une fiche projet (shell global)"
+    maps_to: "openProjetDetailFromDb(id)"
+
+  OPEN_BATIMENT:
+    trigger: "Clic carte bâtiment dans Patrimoine"
+    payload: { batimentId: string, collectiviteId: string }
+    description: "Ouvrir une fiche bâtiment"
+
+  OPEN_VALIDATION_DRAWER:
+    trigger: "Clic bouton 'Voir' dans la table de validation"
+    payload: { projectId: string, validationId?: string }
+    description: "Ouvrir le drawer d'anomalies"
+    maps_to: "voirValProject(id) → selectValProject(id) → openAnomaliesDrawer(id)"
+
+  OPEN_PROJET_FROM_DRAWER:
+    trigger: "Clic bouton 'Corriger' dans le drawer"
+    payload: {}
+    description: "Naviguer de drawer vers fiche projet (shell = collectivite)"
+    maps_to: "goToProjectFromDrawer() → closeAnomaliesDrawer() + openProjetDetailFromDb(id)"
+
+  # Retour
+  BACK_FROM_PROJET:
+    trigger: "Clic bouton retour depuis fiche projet"
+    payload: {}
+    description: "Retour contextuel (dépend de projectOpenContext + sourceView)"
+
+  BACK_FROM_BATIMENT:
+    trigger: "Clic bouton retour depuis fiche bâtiment"
+    payload: {}
+    description: "Retour vers Patrimoine"
+
+  CLOSE_DRAWER:
+    trigger: "Clic fermer drawer / clic overlay"
+    payload: {}
+    description: "Fermer le drawer d'anomalies"
+    maps_to: "closeAnomaliesDrawer()"
+
+  # Tentatives interdites
+  ATTEMPT_OPEN_EXTERNAL_PROJET:
+    trigger: "Clic sur projet dont collectiviteId ≠ auth.collectiviteId"
+    payload: { projectId: string, collectiviteId: string }
+    description: "Tentative d'ouverture d'un projet externe (toujours bloquée)"
+
+  ATTEMPT_OPEN_EXTERNAL_BATIMENT:
+    trigger: "Clic sur bâtiment dont collectiviteId ≠ auth.collectiviteId"
+    payload: { batimentId: string, collectiviteId: string }
+    description: "Tentative d'ouverture d'un bâtiment externe (toujours bloquée)"
+
+# ════════════════════════════════════════════════════════════════════
+# CONTEXTE — Schéma
+# ════════════════════════════════════════════════════════════════════
+context_schema:
+  auth:
+    isAuthenticated: boolean
+    collectiviteId: "string | null"
+    role: "collectivite_read | collectivite_edit | collectivite_sign | collectivite_admin | null"
+    scopes: "string[]"
+  shell: "public | global | collectivite"
+  currentView: State
+  previousView: "State | null"
+  currentCollectiviteId: "string | null"
+  currentProjectId: "string | null"
+  currentBatimentId: "string | null"
+  currentValidationId: "string | null"
+  projectOpenContext: "collectivite | global | validation | null"
+  sourceView: "projets | validation | patrimoine | carte | search | null"
+  error: "{ event, reason, timestamp } | null"
+
+# ════════════════════════════════════════════════════════════════════
+# TABLE DE TRANSITIONS EXHAUSTIVE
+# Format : [état_courant][événement] → { target, guard, side_effect, fallback }
+# ════════════════════════════════════════════════════════════════════
+transitions:
+
+  # ── BOOT ──
+  BOOT:
+    APP_LOADED:
+      target: LOGIN
+      guard: "always"
+      assign: "shell ← public"
+      effect: "Afficher écran connexion"
+      fallback: null
+
+  # ── LOGIN ──
+  LOGIN:
+    LOGIN_SUCCESS:
+      target: DASHBOARD_GLOBAL
+      guard: "evt.token && evt.collectiviteId && evt.role"
+      assign: "auth ← {isAuthenticated:true, collectiviteId, role, scopes}, shell ← global"
+      effect: "navigateTo('dashboard')"
+      fallback: LOGIN
+      fallback_reason: "Payload auth incomplet"
+
+  # ── DASHBOARD_GLOBAL ──
+  DASHBOARD_GLOBAL:
+    NAVIGATE_COLLECTIVITE_HOME:
+      target: COLLECTIVITE_HOME
+      guard: "isAuthenticated && hasCollectivite"
+      assign: "shell ← collectivite, currentCollectiviteId ← evt.collectiviteId || auth.collectiviteId"
+      effect: "navigateTo('priv-collectivite')"
+      fallback: DASHBOARD_GLOBAL
+      fallback_reason: "Non authentifié ou pas de collectivité"
+
+    NAVIGATE_GLOBAL_MAP:
+      target: GLOBAL_MAP
+      guard: "isAuthenticated"
+      assign: "previousView ← DASHBOARD_GLOBAL"
+      effect: "navigateTo('detail') + initMap()"
+      fallback: null
+
+    NAVIGATE_GLOBAL_SEARCH:
+      target: GLOBAL_SEARCH
+      guard: "isAuthenticated"
+      assign: "previousView ← DASHBOARD_GLOBAL"
+      effect: "navigateTo('search') + applySearchFilter()"
+      fallback: null
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+      effect: "aucun"
+      fallback: null
+
+    ATTEMPT_OPEN_EXTERNAL_PROJET:
+      target: DASHBOARD_GLOBAL
+      guard: "never (INTERDIT)"
+      assign: "aucun"
+      effect: "logBlockedAttempt() — audit/monitoring"
+      fallback: DASHBOARD_GLOBAL
+      fallback_reason: "Règle #4 : projet externe non ouvrable"
+
+  # ── COLLECTIVITE_HOME ──
+  COLLECTIVITE_HOME:
+    NAVIGATE_PROJETS:
+      target: COLLECTIVITE_PROJETS
+      guard: "isAuthenticated && hasCollectivite"
+      assign: "previousView ← COLLECTIVITE_HOME"
+      effect: "navigateTo('priv-projets') + loadPrivProjets()"
+      fallback: COLLECTIVITE_HOME
+
+    NAVIGATE_VALIDATION:
+      target: COLLECTIVITE_VALIDATION
+      guard: "isAuthenticated && hasCollectivite"
+      assign: "previousView ← COLLECTIVITE_HOME"
+      effect: "navigateTo('validation-mensuelle') + recalculerValidationMensuelle()"
+      fallback: COLLECTIVITE_HOME
+
+    NAVIGATE_PATRIMOINE:
+      target: COLLECTIVITE_PATRIMOINE
+      guard: "isAuthenticated && hasCollectivite"
+      assign: "previousView ← COLLECTIVITE_HOME"
+      effect: "navigateTo('priv-patrimoine') + renderBatiments()"
+      fallback: COLLECTIVITE_HOME
+
+    NAVIGATE_DASHBOARD:
+      target: DASHBOARD_GLOBAL
+      guard: "isAuthenticated"
+      assign: "shell ← global, currentCollectiviteId ← null"
+      effect: "navigateTo('dashboard')"
+      fallback: null
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+      effect: "aucun"
+
+  # ── COLLECTIVITE_PROJETS ──
+  COLLECTIVITE_PROJETS:
+    OPEN_PROJET_COLLECTIVITE:
+      target: PROJET_DETAIL_COLLECTIVITE
+      guard: "isAuthenticated && isOwnProject(evt.collectiviteId)"
+      assign: "currentProjectId ← evt.projectId, projectOpenContext ← 'collectivite', sourceView ← 'projets'"
+      effect: "openProjetDetailFromDb(evt.projectId)"
+      fallback: COLLECTIVITE_PROJETS
+      fallback_reason: "Projet n'appartient pas à la collectivité"
+
+    ATTEMPT_OPEN_EXTERNAL_PROJET:
+      target: COLLECTIVITE_PROJETS
+      guard: "never (INTERDIT)"
+      assign: "aucun"
+      effect: "logBlockedAttempt()"
+      fallback: COLLECTIVITE_PROJETS
+      fallback_reason: "Règle #4/#5 : projet externe visible mais non ouvrable"
+
+    NAVIGATE_COLLECTIVITE_BACK:
+      target: COLLECTIVITE_HOME
+      guard: "isAuthenticated"
+      assign: "previousView ← COLLECTIVITE_PROJETS"
+      effect: "navigateTo('priv-collectivite')"
+      fallback: null
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── COLLECTIVITE_VALIDATION ──
+  COLLECTIVITE_VALIDATION:
+    OPEN_VALIDATION_DRAWER:
+      target: PROJECT_DRAWER_VALIDATION
+      guard: "isAuthenticated && isOwnProject(evt.collectiviteId)"
+      assign: "currentProjectId ← evt.projectId, projectOpenContext ← 'validation', sourceView ← 'validation'"
+      effect: "voirValProject(evt.projectId) → openAnomaliesDrawer()"
+      fallback: COLLECTIVITE_VALIDATION
+
+    NAVIGATE_COLLECTIVITE_BACK:
+      target: COLLECTIVITE_HOME
+      guard: "isAuthenticated"
+      assign: "previousView ← COLLECTIVITE_VALIDATION"
+      effect: "navigateTo('priv-collectivite')"
+      fallback: null
+
+    NAVIGATE_DASHBOARD:
+      target: COLLECTIVITE_VALIDATION
+      guard: "never (INTERDIT)"
+      assign: "aucun"
+      effect: "logBlockedAttempt() + showErrorToast('Retournez d'abord à l'accueil')"
+      fallback: COLLECTIVITE_VALIDATION
+      fallback_reason: "INTERDIT : Validation → Dashboard Global (doc state machine)"
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── COLLECTIVITE_PATRIMOINE ──
+  COLLECTIVITE_PATRIMOINE:
+    OPEN_BATIMENT:
+      target: BATIMENT_DETAIL_COLLECTIVITE
+      guard: "isAuthenticated && isOwnBatiment(evt.collectiviteId)"
+      assign: "currentBatimentId ← evt.batimentId"
+      effect: "navigateTo('detail-batiment')"
+      fallback: COLLECTIVITE_PATRIMOINE
+      fallback_reason: "Bâtiment externe"
+
+    ATTEMPT_OPEN_EXTERNAL_BATIMENT:
+      target: COLLECTIVITE_PATRIMOINE
+      guard: "never (INTERDIT)"
+      assign: "aucun"
+      effect: "logBlockedAttempt()"
+      fallback: COLLECTIVITE_PATRIMOINE
+      fallback_reason: "Bâtiment externe → détail interdit"
+
+    NAVIGATE_COLLECTIVITE_BACK:
+      target: COLLECTIVITE_HOME
+      guard: "isAuthenticated"
+      effect: "navigateTo('priv-collectivite')"
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── PROJET_DETAIL_COLLECTIVITE ──
+  PROJET_DETAIL_COLLECTIVITE:
+    BACK_FROM_PROJET:
+      target: "(dynamique)"
+      resolution: |
+        if sourceView == 'validation' → COLLECTIVITE_VALIDATION
+        if sourceView == 'patrimoine' → COLLECTIVITE_PATRIMOINE
+        else → COLLECTIVITE_PROJETS
+      guard: "isAuthenticated"
+      assign: "currentProjectId ← null, projectOpenContext ← null, sourceView ← null"
+      effect: "(contextuel) renderValidation | renderPatrimoine | renderProjets"
+      fallback: COLLECTIVITE_PROJETS
+      fallback_reason: "Contexte ambigu → fallback Mes Projets"
+
+    NAVIGATE_DASHBOARD:
+      target: PROJET_DETAIL_COLLECTIVITE
+      guard: "never (INTERDIT)"
+      assign: "aucun"
+      effect: "logBlockedAttempt() + showErrorToast('Utilisez le bouton retour')"
+      fallback: PROJET_DETAIL_COLLECTIVITE
+      fallback_reason: "Règle #1 : fiche projet privée ≠ shell global"
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── BATIMENT_DETAIL_COLLECTIVITE ──
+  BATIMENT_DETAIL_COLLECTIVITE:
+    BACK_FROM_BATIMENT:
+      target: COLLECTIVITE_PATRIMOINE
+      guard: "isAuthenticated"
+      assign: "currentBatimentId ← null"
+      effect: "navigateTo('priv-patrimoine') + renderBatiments()"
+      fallback: COLLECTIVITE_HOME
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── PROJECT_DRAWER_VALIDATION ──
+  PROJECT_DRAWER_VALIDATION:
+    OPEN_PROJET_FROM_DRAWER:
+      target: PROJET_DETAIL_COLLECTIVITE
+      guard: "isAuthenticated && role >= collectivite_edit"
+      assign: "shell ← collectivite (forcé), sourceView ← 'validation'"
+      effect: "goToProjectFromDrawer() → closeAnomaliesDrawer() + openProjetDetailFromDb()"
+      fallback: PROJECT_DRAWER_VALIDATION
+      fallback_reason: "collectivite_read ne peut pas corriger (rôle insuffisant)"
+
+    NAVIGATE_DASHBOARD:
+      target: PROJECT_DRAWER_VALIDATION
+      guard: "never (INTERDIT)"
+      assign: "aucun"
+      effect: "logBlockedAttempt() + showErrorToast()"
+      fallback: PROJECT_DRAWER_VALIDATION
+      fallback_reason: "Règle #2/#3 : Drawer → Dashboard interdit"
+
+    CLOSE_DRAWER:
+      target: COLLECTIVITE_VALIDATION
+      guard: "isAuthenticated"
+      assign: "currentProjectId ← null, currentValidationId ← null, projectOpenContext ← null"
+      effect: "closeAnomaliesDrawer()"
+      fallback: null
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── GLOBAL_MAP ──
+  GLOBAL_MAP:
+    OPEN_PROJET_GLOBAL:
+      target: PROJECT_DETAIL_GLOBAL
+      guard: "isAuthenticated && isOwnProject(evt.collectiviteId)"
+      assign: "currentProjectId ← evt.projectId, projectOpenContext ← 'global', sourceView ← 'carte'"
+      effect: "openProjetDetailFromDb(evt.projectId)"
+      fallback: GLOBAL_MAP
+      fallback_reason: "Projet externe non ouvrable"
+
+    ATTEMPT_OPEN_EXTERNAL_PROJET:
+      target: GLOBAL_MAP
+      guard: "never (INTERDIT)"
+      effect: "logBlockedAttempt()"
+      fallback: GLOBAL_MAP
+      fallback_reason: "Règle #4 : clic carte externe neutralisé"
+
+    NAVIGATE_DASHBOARD:
+      target: DASHBOARD_GLOBAL
+      guard: "isAuthenticated"
+      effect: "navigateTo('dashboard')"
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── GLOBAL_SEARCH ──
+  GLOBAL_SEARCH:
+    OPEN_PROJET_GLOBAL:
+      target: PROJECT_DETAIL_GLOBAL
+      guard: "isAuthenticated && isOwnProject(evt.collectiviteId)"
+      assign: "currentProjectId ← evt.projectId, projectOpenContext ← 'global', sourceView ← 'search'"
+      effect: "openProjetDetailFromDb(evt.projectId)"
+      fallback: GLOBAL_SEARCH
+      fallback_reason: "Projet externe non ouvrable"
+
+    ATTEMPT_OPEN_EXTERNAL_PROJET:
+      target: GLOBAL_SEARCH
+      guard: "never (INTERDIT)"
+      effect: "logBlockedAttempt()"
+      fallback: GLOBAL_SEARCH
+      fallback_reason: "Règle #5 : résultat externe neutralisé"
+
+    NAVIGATE_DASHBOARD:
+      target: DASHBOARD_GLOBAL
+      guard: "isAuthenticated"
+      effect: "navigateTo('dashboard')"
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+  # ── PROJECT_DETAIL_GLOBAL ──
+  PROJECT_DETAIL_GLOBAL:
+    BACK_FROM_PROJET:
+      target: "(dynamique)"
+      resolution: |
+        if sourceView == 'carte' → GLOBAL_MAP
+        if sourceView == 'search' → GLOBAL_SEARCH
+        else → DASHBOARD_GLOBAL
+      guard: "isAuthenticated"
+      assign: "currentProjectId ← null, projectOpenContext ← null, sourceView ← null"
+      effect: "(contextuel) renderGlobalMap | renderGlobalSearch | renderDashboard"
+      fallback: DASHBOARD_GLOBAL
+
+    LOGOUT:
+      target: LOGIN
+      guard: "always"
+      assign: "resetContext()"
+
+# ════════════════════════════════════════════════════════════════════
+# TRANSITIONS EXPLICITEMENT INTERDITES
+# ════════════════════════════════════════════════════════════════════
+forbidden_transitions:
+  - from: COLLECTIVITE_VALIDATION
+    event: NAVIGATE_DASHBOARD
+    reason: "Règle doc: VALIDATION → DASHBOARD_GLOBAL lors d'un clic Voir"
+    source: "colconnect_frontend_state_machine.md, ligne 62"
+
+  - from: PROJECT_DRAWER_VALIDATION
+    event: NAVIGATE_DASHBOARD
+    reason: "Règle doc: DRAWER → DASHBOARD_GLOBAL lors d'un clic Corriger"
+    source: "colconnect_frontend_state_machine.md, ligne 63"
+
+  - from: PROJET_DETAIL_COLLECTIVITE
+    event: NAVIGATE_DASHBOARD
+    reason: "Règle doc: PROJET privé collectivité → shell global"
+    source: "colconnect_frontend_state_machine.md, ligne 64"
+
+  - from: ANY_STATE
+    event: ATTEMPT_OPEN_EXTERNAL_PROJET
+    reason: "Règle doc: PROJET externe visible → ouverture interdite"
+    source: "colconnect_frontend_state_machine.md, ligne 66"
+
+  - from: COLLECTIVITE_PATRIMOINE
+    event: ATTEMPT_OPEN_EXTERNAL_BATIMENT
+    reason: "Règle doc: BÂTIMENT externe → détail interdit"
+    source: "colconnect_frontend_state_machine.md, ligne 65"
+
+# ════════════════════════════════════════════════════════════════════
+# INVARIANTS SYSTÈME
+# ════════════════════════════════════════════════════════════════════
+invariants:
+  INV_01_SHELL_STATE_COHERENCE:
+    rule: "Si état ∈ {COLLECTIVITE_*, PROJET_DETAIL_COLLECTIVITE, BATIMENT_DETAIL_*, DRAWER} → shell == collectivite"
+    severity: CRITICAL
+    source: "system_invariants.md + colconnect_frontend_state_machine.md"
+
+  INV_02_SHELL_GLOBAL_COHERENCE:
+    rule: "Si état ∈ {DASHBOARD_GLOBAL, GLOBAL_MAP, GLOBAL_SEARCH, PROJECT_DETAIL_GLOBAL} → shell == global"
+    severity: CRITICAL
+
+  INV_03_MULTI_TENANT:
+    rule: "resource.collectivite_id == user.auth.collectiviteId pour toute ouverture"
+    severity: CRITICAL
+    source: "system_invariants.md"
+
+  INV_04_PROJECT_CONTEXT:
+    rule: "Si état ∈ {PROJET_DETAIL_*} → currentProjectId ≠ null"
+    severity: HIGH
+
+  INV_05_BATIMENT_CONTEXT:
+    rule: "Si état == BATIMENT_DETAIL_COLLECTIVITE → currentBatimentId ≠ null"
+    severity: HIGH
+
+  INV_06_CONTEXT_EQUALS_RENDER:
+    rule: "contexte d'ouverture = contexte de rendu = contexte de retour"
+    severity: CRITICAL
+    source: "colconnect_frontend_state_machine.md, principe final"
+
+  INV_07_SIGNED_IMMUTABLE:
+    rule: "Une validation signée ne peut plus être modifiée"
+    severity: CRITICAL
+    source: "system_invariants.md"
+
+  INV_08_AUTH_REQUIRED:
+    rule: "Tout état sauf BOOT et LOGIN requiert auth.isAuthenticated == true"
+    severity: CRITICAL
+
+# ════════════════════════════════════════════════════════════════════
+# TESTS OBLIGATOIRES (mapping doc → transitions)
+# ════════════════════════════════════════════════════════════════════
+required_tests:
+  TEST_01:
+    scenario: "Login → Dashboard → Accéder collectivité"
+    events: [LOGIN_SUCCESS, NAVIGATE_COLLECTIVITE_HOME]
+    expected_final_state: COLLECTIVITE_HOME
+    expected_shell: collectivite
+
+  TEST_02:
+    scenario: "Collectivité → Validation → Voir"
+    events: [NAVIGATE_VALIDATION, OPEN_VALIDATION_DRAWER]
+    expected_final_state: PROJECT_DRAWER_VALIDATION
+    expected_shell: collectivite
+
+  TEST_03:
+    scenario: "Validation → Corriger → fiche projet (shell collectivité)"
+    events: [OPEN_VALIDATION_DRAWER, OPEN_PROJET_FROM_DRAWER]
+    expected_final_state: PROJET_DETAIL_COLLECTIVITE
+    expected_shell: collectivite
+    expected_sourceView: validation
+
+  TEST_04:
+    scenario: "Fiche projet → retour → Validation (si source=validation)"
+    events: [OPEN_VALIDATION_DRAWER, OPEN_PROJET_FROM_DRAWER, BACK_FROM_PROJET]
+    expected_final_state: COLLECTIVITE_VALIDATION
+
+  TEST_05:
+    scenario: "Collectivité → Mes projets → clic projet"
+    events: [NAVIGATE_PROJETS, OPEN_PROJET_COLLECTIVITE]
+    expected_final_state: PROJET_DETAIL_COLLECTIVITE
+    expected_shell: collectivite
+
+  TEST_06:
+    scenario: "Projet externe visible → non ouvrable"
+    events: [ATTEMPT_OPEN_EXTERNAL_PROJET]
+    expected_result: "GUARD_FAILED, état inchangé"
+
+  TEST_07:
+    scenario: "Bâtiment propriétaire → ouvrir"
+    events: [NAVIGATE_PATRIMOINE, OPEN_BATIMENT]
+    expected_final_state: BATIMENT_DETAIL_COLLECTIVITE
+    expected_shell: collectivite
